@@ -1,9 +1,12 @@
 import requests
+import urllib.request, urllib.parse
 import time
-import subprocess
+from timeStamp import Excel
 from datetime import datetime
 import yaml
 import os 
+import pytz
+from formTransfer import Form_Migration
 Introduction = """
 Welcome to RDrive toolbox. 
 This Project is maintained by Samuel Zhang (gejia.zhang@downergroup.com)
@@ -221,12 +224,85 @@ class Programs(RDrive):
         programNumber = input('Select from the following (Number):')
         programNumber = self.input2int(programNumber)
         return programList[programNumber]
+        
+        
 
-    def run(self):
-        pyFilename = self.programFilename
-        print(pyFilename)
-        subprocess.call(["python",pyFilename])
-        pass
+
+def findWorkBook():
+    current_dir = os.getcwd()
+    parent_dir = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
+    
+
+    for file_name in os.listdir(current_dir):
+        if file_name.endswith('.xlsx') or file_name.endswith('.xlsm'):
+            print('Excel file found:', file_name)
+            return os.path.join(current_dir, file_name)
+    for filename in os.listdir(parent_dir):
+        if file_name.endswith('.xlsx'):
+            print('Excel file found:', file_name)
+            return os.path.join(current_dir, file_name)
+    filename = input('couldn''t find an excel file in the current directory, input filename: ')
+    return filename
+
+def mainMenuFormTransfer():
+    options = {
+        1: "Migrate a form",
+        2: "Migrate multiple forms",
+        3: "Exit"
+    }
+    print("Main Menu")
+    for option in options.keys():
+        print(str(option)+")",options[option])
+
+    number = input("Enter a number: ")
+    match trystr2int(number):
+        case 1: transfer_form()
+        case 2: transfer_form_skip()
+        case 3: exit()
+        case _:
+            print("Instruction unclear")
+            mainMenuFormTransfer
+    return
+
+def trystr2int(string):
+    try: 
+        return int(string)
+    except:
+        return 0 
+
+def transfer_form():
+    oldFormId = input("Input the ID for the old form: ")
+    newFormId = input("Input the ID for the new form: ")
+    form = Form_Migration(oldFormId,newFormId)
+    mainMenuFormTransfer(form)
+
+def transfer_form_skip():
+    currentdir = os.path.dirname(os.path.abspath(__file__))
+    filename = os.path.join(currentdir,'formList.txt')
+    with open(filename, 'r') as f:
+        for line in f:
+            # Remove any trailing newline character
+            line = line.strip()
+            # Split the line into two parts using space as the delimiter
+            parts = line.split(' ')[:2]
+            # Check if the line contains two parts
+            print(parts[0],parts[1])
+            form = Form_Migration(parts[0],parts[1],True)
+    mainMenuFormTransfer()
+
+def parse_yaml():
+    return 0 
+
+def mainMenuTimeStamp():
+    filename = findWorkBook()
+    Punchlist = Excel(filename)
+    Punchlist.read_config()
+    Process = Punchlist.FormalIRFindingsConnector()
+    print(Process)
+    Punchlist.trainsetLocation = Process
+    Punchlist.selectSheet()
+
+
 
 def menuLoop(rdrive):
     rdrive.project = rdrive.getProject()
@@ -240,6 +316,8 @@ def main():
     DownerRTS = RDrive()
     DownerRTS.login(DownerRTS)
     menuLoop(DownerRTS)
+
+    
 
 if __name__ == '__main__':
     main()

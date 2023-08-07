@@ -1,19 +1,15 @@
 # Full imports 
-import sys
-sys.path.append('.')
 import yaml
 import urllib.request, urllib.parse
 import xlwings as xw
 import os
 import atexit
 import matplotlib.pyplot as plt
-
+from datetime import datetime, timedelta
 import pytz
 # Class Specific Imports
-from rdrive import RDrive
 from io import BytesIO
 from PIL import Image
-from datetime import datetime, timedelta
 from tabulate import tabulate
 from requests import get
 
@@ -31,9 +27,8 @@ Some things to note before using:
 """
 print(introduction)
 # Sheet
-class Excel(RDrive):
+class Excel():
     def __init__(self, book) -> None:
-        super().__init__()
         self.path = book
         self.project = 'Pakenham'
         self.book = xw.Book(book)
@@ -79,8 +74,7 @@ class Excel(RDrive):
             case 2:
                 self.selectSheet()
             case 3:
-                pid = os.getpid()
-                os.kill(pid)
+                return
             case _:
                 print("Invalid input\n")
                 self.mainMenu()
@@ -238,7 +232,26 @@ class Excel(RDrive):
         self.initializeLists()
         self.show_table()
         self.mainMenu()
-    
+
+def url2plot(url,size =(5,5)):
+    """
+    params: image - a web url containing the image
+    params: size - an tuple of integers that determines how big the output image is
+    return: fig - a matplot subplot containing the image
+    """
+    with urllib.request.urlopen(url) as url_response:
+        image_data = url_response.read()
+    img = Image.open(BytesIO(image_data))       
+    fig,ax = plt.subplots(frameon= False)
+    fig.set_size_inches(size)
+    ax.set_axis_off()
+    fig.add_axes(ax)
+    ax.imshow(img)
+    ax.axis('off')
+    ax.axes.get_xaxis().set_visible(False)
+    ax.axes.get_yaxis().set_visible(False)
+    return fig
+
 """
 # Global Functions
     Functions that are useful for the program to function that operate on external variables
@@ -308,50 +321,3 @@ def offset_datetime(date_time, m2, m1):
 
 def tranpose_list(lst):
     return [list(i) for i in zip(*lst)]
-
-def findWorkBook():
-    current_dir = os.getcwd()
-    parent_dir = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
-    
-
-    for file_name in os.listdir(current_dir):
-        if file_name.endswith('.xlsx') or file_name.endswith('.xlsm'):
-            print('Excel file found:', file_name)
-            return os.path.join(current_dir, file_name)
-    for filename in os.listdir(parent_dir):
-        if file_name.endswith('.xlsx'):
-            print('Excel file found:', file_name)
-            return os.path.join(current_dir, file_name)
-    filename = input('couldn''t find an excel file in the current directory, input filename: ')
-    return filename        
-
-def url2plot(url,size =(5,5)):
-    """
-    params: image - a web url containing the image
-    params: size - an tuple of integers that determines how big the output image is
-    return: fig - a matplot subplot containing the image
-    """
-    with urllib.request.urlopen(url) as url_response:
-        image_data = url_response.read()
-    img = Image.open(BytesIO(image_data))       
-    fig,ax = plt.subplots(frameon= False)
-    fig.set_size_inches(size)
-    ax.set_axis_off()
-    fig.add_axes(ax)
-    ax.imshow(img)
-    ax.axis('off')
-    ax.axes.get_xaxis().set_visible(False)
-    ax.axes.get_yaxis().set_visible(False)
-    return fig
-
-if __name__ == "__main__": 
-    filename = findWorkBook()
-    Punchlist = Excel(filename)
-    Punchlist.read_config()
-    atexit.register(Punchlist.close)
-    Process = Punchlist.FormalIRFindingsConnector()
-    print(Process)
-    Punchlist.trainsetLocation = Process
-    Punchlist.selectSheet()
-    
-    
