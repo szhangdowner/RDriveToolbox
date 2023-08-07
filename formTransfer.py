@@ -1,32 +1,12 @@
 from datetime import datetime
 import time
 import requests
-import pandas as pd
 from tabulate import tabulate
 import yaml
 import os 
+from pandas import DataFrame as df
+from pandas import merge
 
-Introduction = """
-Welcome to the form migration tool 
-Before using, please make sure:
-1) You are connected to a network that is capable of making http requests
-2) You have the following libraries
-    - datetime
-    - pandas
-    - tabulate
-3) You have logged in and obtained a valid token
-
-To migrate multiple forms you need to structure your 'formList.txt' IDs as shown below
-
-AX674NB 2HSI782
-ONJ213F TSAU23A
-2SD9OSD BSFSWK1
-RTS2DOW SZAH123
-
-With the old form IDs first, and new form IDs second. Make a new line for each new form you need to transfer
-
-"""
-print(Introduction)
 class User():
     def __init__(self, username, password):
         self.companyAPI = 'https://api-downer-rts.rdrive.io/api'
@@ -246,12 +226,12 @@ class Form_Migration():
     def createUploadTable(self):
         print('Merging Data')
         time.sleep(1)
-        dataframe1 = pd.DataFrame(self.oldFormFields)
-        dataframe2 = pd.DataFrame(self.newFormFields)
+        dataframe1 = df(self.oldFormFields)
+        dataframe2 = df(self.newFormFields)
         filename = os.path.join(os.path.dirname(os.path.realpath(__file__)),'backup.yaml')
         self.dumpYamlData(filename, {self.oldFormCode: dataframe1.to_dict('index')})
         self.dumpYamlData(filename, {self.newFormCode: dataframe2.to_dict('index')})
-        upload_table = pd.merge(dataframe1,dataframe2,on = 'title')
+        upload_table = merge(dataframe1,dataframe2,on = 'title')
         upload_table['linkedDocId'] = upload_table['meta_x'].apply(lambda x: x.get('documentIds') if 'documentIds' in x else []) 
         upload_table["displayName"] = [[] for x in range(len(upload_table.index))]
         upload_table["storageId"] = [[] for x in range(len(upload_table.index))]
@@ -412,57 +392,5 @@ class Form_Migration():
                     "value": api_value,
                     "meta": api_meta_data,
                 }
-            response = requests.post(url = post_endpoint, headers = self.token, json = body)            
-
-def mainMenu():
-    options = {
-        1: "Migrate a form",
-        2: "Migrate multiple forms",
-        3: "Exit"
-    }
-    print("Main Menu")
-    for option in options.keys():
-        print(str(option)+")",options[option])
-
-    number = input("Enter a number: ")
-    match trystr2int(number):
-        case 1: transfer_form()
-        case 2: transfer_form_skip()
-        case 3: exit()
-        case _:
-            print("Instruction unclear")
-            mainMenu 
-    return
-
-def trystr2int(string):
-    try: 
-        return int(string)
-    except:
-        return 0 
-
-def transfer_form():
-    oldFormId = input("Input the ID for the old form: ")
-    newFormId = input("Input the ID for the new form: ")
-    form = Form_Migration(oldFormId,newFormId)
-    mainMenu(form)
-
-def transfer_form_skip():
-    currentdir = os.path.dirname(os.path.abspath(__file__))
-    filename = os.path.join(currentdir,'formList.txt')
-    with open(filename, 'r') as f:
-        for line in f:
-            # Remove any trailing newline character
-            line = line.strip()
-            # Split the line into two parts using space as the delimiter
-            parts = line.split(' ')[:2]
-            # Check if the line contains two parts
-            print(parts[0],parts[1])
-            form = Form_Migration(parts[0],parts[1],True)
-    mainMenu()
-
-def parse_yaml():
-    return 0 
-
-if __name__ == "__main__":
-    mainMenu()
+            response = requests.post(url = post_endpoint, headers = self.token, json = body)
 
